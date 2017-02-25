@@ -36,12 +36,16 @@ define( 'WPDC_WISHLIST_VERSION', '0.1' );
 
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\init' );
 function init() {
-	if ( class_exists( '\WPDiscourse\Discourse\Discourse')) {
+	if ( class_exists( '\WPDiscourse\Discourse\Discourse' ) ) {
+
+		require_once( __DIR__ . '/lib/discourse-wishlist.php' );
+		new DiscourseWishlist();
+
 		if ( is_admin() ) {
 			require_once( __DIR__ . '/admin/admin.php' );
 
 			$options_page = OptionsPage::get_instance();
-			$form_helper = FormHelper::get_instance();
+			$form_helper  = FormHelper::get_instance();
 
 			new Admin( $options_page, $form_helper );
 		}
