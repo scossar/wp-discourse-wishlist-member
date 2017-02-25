@@ -4,6 +4,7 @@
  * Description: Extends the WP Discourse plugin to allow WishList members to be added to Discourse groups.
  * Version: 0.1
  * Text Domain: wpdc-wishlist
+ * GitHub Plugin URI: https://github.com/scossar/wp-discourse-wishlist-member
  *
  * @packageWPDCWishList
  */
@@ -36,7 +37,14 @@ define( 'WPDC_WISHLIST_VERSION', '0.1' );
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\init' );
 function init() {
 	if ( class_exists( '\WPDiscourse\Discourse\Discourse')) {
-		write_log( 'Discourse has loaded' );
+		if ( is_admin() ) {
+			require_once( __DIR__ . '/admin/admin.php' );
+
+			$options_page = OptionsPage::get_instance();
+			$form_helper = FormHelper::get_instance();
+
+			new Admin( $options_page, $form_helper );
+		}
 	}
 }
 
