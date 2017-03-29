@@ -43,10 +43,12 @@ function init() {
 
 		if ( is_admin() ) {
 			require_once( __DIR__ . '/admin/admin.php' );
+			require_once( __DIR__ . '/admin/settings-validator.php' );
 
 			$options_page = OptionsPage::get_instance();
 			$form_helper  = FormHelper::get_instance();
 
+			new SettingsValidator();
 			new Admin( $options_page, $form_helper );
 		}
 	}
