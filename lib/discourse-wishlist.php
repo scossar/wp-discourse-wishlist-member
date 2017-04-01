@@ -3,6 +3,8 @@
 namespace WPDCWishList;
 
 class DiscourseWishlist {
+	use DiscourseWishlistUtilities;
+
 	protected $options;
 	protected $option_name = 'dcwl_options';
 
@@ -13,6 +15,8 @@ class DiscourseWishlist {
 
 	public function initialize_plugin() {
 		add_option( $this->option_name, array());
+		$levels = $this->get_wishlist_levels();
+		write_log( 'levels', $levels );
 	}
 
 	public function add_options( $wpdc_options ) {
@@ -30,17 +34,4 @@ class DiscourseWishlist {
 
 		return $merged_options;
 	}
-
-//	protected function get_wishlist_levels() {
-//		$levels = null;
-//		if ( function_exists( 'wlmapi_get_levels' ) ) {
-//			$levels_data = wlmapi_get_levels();
-//			if ( ! empty( $levels_data['levels'] ) && ! empty( $levels_data['levels']['level'] ) ) {
-//				$levels = $levels_data['levels']['level'];
-//			}
-//		}
-//
-//		write_log( 'levels', $levels );
-//		return $levels;
-//	}
 }

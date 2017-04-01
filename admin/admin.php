@@ -5,6 +5,8 @@ namespace WPDCWishList;
 use WPDiscourse\Utilities\Utilities as DiscourseUtilities;
 
 class Admin {
+    use DiscourseWishlistUtilities;
+
 	protected $options;
 	protected $options_page;
 	protected $form_helper;

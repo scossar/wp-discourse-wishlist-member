@@ -38,6 +38,7 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\\init' );
 function init() {
 	if ( class_exists( '\WPDiscourse\Discourse\Discourse' ) ) {
 
+		require_once( __DIR__ . '/lib/discourse-wishlist-utilities.php' );
 		require_once( __DIR__ . '/lib/discourse-wishlist.php' );
 		new DiscourseWishlist();
 
