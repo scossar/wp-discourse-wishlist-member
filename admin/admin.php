@@ -155,6 +155,7 @@ class Admin {
 						<?php
 						$checked = $dcwl_groups[ $level_id ]['auto_remove'];
 						?>
+                        <input type="hidden" value="0" name="<?php echo $level_key; ?>[auto_remove]">
                         <input type="checkbox" name="<?php echo $level_key; ?>[auto_remove]"
                                value="1" <?php checked( $checked ); ?>>
 
