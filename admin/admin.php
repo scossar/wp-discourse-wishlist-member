@@ -81,6 +81,7 @@ class Admin {
 	}
 
 
+	// Todo: use this setting!
 	public function setting_enabled_checkbox() {
 		$this->form_helper->checkbox_input( 'dcwl_enabled', 'dcwl_options', __( 'Enable Discourse WishList groups.', 'wpdc-wishlist' ) );
 	}
@@ -92,6 +93,7 @@ class Admin {
         <tr>
             <th>WishList Level</th>
             <th>Discourse Group</th>
+            <th>Require Email Activation</th>
         </tr>
 		<?php if ( $levels && ! is_wp_error( $discourse_groups ) ) : ?>
 			<?php foreach ( $levels as $level ) : ?>
@@ -101,10 +103,11 @@ class Admin {
 						<?php
 						$dcwl_groups = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
 						?>
-                        <select multiple name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][]" class="widefat">
+                        <select multiple name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][id][]" class="widefat">
 							<?php foreach ( $discourse_groups as $discourse_group ) : ?>
+                                <?php write_log('discourse group', $discourse_group); ?>
 								<?php
-								if ( array_key_exists( $level['id'], $dcwl_groups ) && in_array( $discourse_group['id'], $dcwl_groups[ $level['id'] ], false ) ) {
+								if ( array_key_exists( $level['id'], $dcwl_groups ) && in_array( $discourse_group['id'], $dcwl_groups[ $level['id'] ]['id'], false ) ) {
 									$selected = 'selected';
 								} else {
 									$selected = '';
@@ -115,6 +118,12 @@ class Admin {
                                         value="<?php echo esc_attr( $discourse_group['id'] ); ?>"><?php echo esc_attr( $discourse_group['name'] ); ?></option>
 							<?php endforeach; ?>
                         </select>
+                    </td>
+                    <td>
+                        <?php
+                        $checked = $dcwl_groups[ $level['id']]['act'];
+                        ?>
+                        <input type="checkbox" name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][act]" value="1" <?php checked( $checked ); ?>>
 
                     </td>
                 </tr>
