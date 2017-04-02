@@ -5,7 +5,7 @@ namespace WPDCWishList;
 use WPDiscourse\Utilities\Utilities as DiscourseUtilities;
 
 class Admin {
-    use DiscourseWishlistUtilities;
+	use DiscourseWishlistUtilities;
 
 	protected $options;
 	protected $options_page;
@@ -27,36 +27,35 @@ class Admin {
 		add_settings_section( 'dcwl_settings_section', __( 'Discourse Wishlist Group Associations' ), array(
 			$this,
 			'settings_page_details',
-		), 'dcwl_options' );
+		), 'dcwl_groups' );
 
 		add_settings_field( 'dcwl_enabled', __( 'Enable Discourse WishList Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'setting_enabled_checkbox',
-		), 'dcwl_options', 'dcwl_settings_section' );
+		), 'dcwl_groupd', 'dcwl_settings_section' );
 
 		add_settings_field( 'dcwl_group_associations', __( 'Discourse Wishlist Group Associations', 'wpdc-wishlist' ), array(
 			$this,
 			'discourse_wishlist_group_options',
-		), 'dcwl_options', 'dcwl_settings_section' );
+		), 'dcwl_groups', 'dcwl_settings_section' );
 
-		register_setting( 'dcwl_options', 'dcwl_options', array( $this->form_helper, 'validate_options' ) );
+		register_setting( 'dcwl_groups', 'dcwl_groups', array( $this->form_helper, 'validate_options' ) );
 	}
 
 	public function add_groups_page() {
-		$groups_settings = add_submenu_page(
+		add_submenu_page(
 			'wp_discourse_options',
 			__( 'WishList Groups', 'wpdc-wishlist' ),
 			__( 'WishList Groups', 'wpdc-wishlist' ),
 			'manage_options',
 			'wpdc_wishlist_options',
 			array( $this, 'dcwl_options_tab' ) );
-		// Todo: maybe move the connection_status_notice to FormHelper, so that it can be accessed here.
 	}
 
 	public function discourse_wishlist_settings_fields( $tab ) {
 		if ( 'wpdc_wishlist_options' === $tab ) {
-			settings_fields( 'dcwl_options' );
-			do_settings_sections( 'dcwl_options' );
+			settings_fields( 'dcwl_groups' );
+			do_settings_sections( 'dcwl_groups' );
 		}
 	}
 
@@ -88,7 +87,7 @@ class Admin {
 
 	public function discourse_wishlist_group_options() {
 		$levels           = $this->get_wishlist_levels();
-		$discourse_groups = $this->get_discourse_group_names();
+		$discourse_groups = $this->get_discourse_groups();
 		?>
         <tr>
             <th>WishList Level</th>
@@ -99,78 +98,29 @@ class Admin {
                 <tr>
                     <td><?php echo $level['name'] ?></td>
                     <td>
-                        <?php
-                        $dcwl_groups = ! empty( $this->options['dcwl_groups'] ) ? $this->options['dcwl_groups'] : null;
-                        ?>
-                        <select multiple name="dcwl_options[dcwl_groups][<?php echo esc_attr( $level['id'] ); ?>][]" class="widefat">
-                            <option value="none">None</option>
+						<?php
+						$dcwl_groups = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
+						?>
+                        <select multiple name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][]" class="widefat">
 							<?php foreach ( $discourse_groups as $discourse_group ) : ?>
-                                <?php
-                                write_log('level id', $level['id']);
-                                write_log( 'discourse_group', $discourse_group);
-                                if ( array_key_exists( $level['id'], $dcwl_groups  ) && in_array( $discourse_group, $dcwl_groups[ $level['id']],  true ) ) {
-                                    $selected = 'selected';
-                                } else {
-                                    $selected = '';
-                                }
+								<?php
+								if ( array_key_exists( $level['id'], $dcwl_groups ) && in_array( $discourse_group['id'], $dcwl_groups[ $level['id'] ], false ) ) {
+									$selected = 'selected';
+								} else {
+									$selected = '';
+								}
 
-                                ?>
-                                <option <?php echo esc_attr( $selected ); ?> value="<?php echo esc_attr( $discourse_group ); ?>"><?php echo esc_attr( $discourse_group ); ?></option>
+								?>
+                                <option <?php echo esc_attr( $selected ); ?>
+                                        value="<?php echo esc_attr( $discourse_group['id'] ); ?>"><?php echo esc_attr( $discourse_group['name'] ); ?></option>
 							<?php endforeach; ?>
                         </select>
-
 
                     </td>
                 </tr>
 			<?php endforeach; ?>
 		<?php endif; ?>
 		<?php
-	}
-
-	// Todo: set a transient so this can be cached.
-	protected function get_discourse_group_names() {
-		$base_url = ! empty( $this->options['url'] ) ? $this->options['url'] : null;
-
-		if ( ! $base_url ) {
-
-			return new \WP_Error( 'Unable to retrieve groups.', 'The Discourse URL has not been set.' );
-		}
-
-		$groups_url = $base_url . '/groups.json';
-		$response   = wp_remote_get( $groups_url );
-
-		if ( ! DiscourseUtilities::validate( $response ) ) {
-			return new \WP_Error( 'Could not get a response from discourse/groups.json' );
-		}
-
-		$response = json_decode( wp_remote_retrieve_body( $response ), true );
-
-		$groups = ! empty( $response['groups'] ) ? $response['groups'] : null;
-
-		if ( ! $groups ) {
-
-			return new \WP_Error( 'The groups key was not returned' );
-		}
-
-		$group_names = [];
-
-		foreach ( $groups as $group ) {
-			$group_names[] = $group['name'];
-		}
-
-		return $group_names;
-	}
-
-	protected function get_wishlist_levels() {
-		$levels = null;
-		if ( function_exists( 'wlmapi_get_levels' ) ) {
-			$levels_data = wlmapi_get_levels();
-			if ( ! empty( $levels_data['levels'] ) && ! empty( $levels_data['levels']['level'] ) ) {
-				$levels = $levels_data['levels']['level'];
-			}
-		}
-
-		return $levels;
 	}
 
 	protected function group_select() {
