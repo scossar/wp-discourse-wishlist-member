@@ -31,7 +31,7 @@ use \WPDiscourse\Admin\OptionsPage as OptionsPage;
 use \WPDiscourse\Admin\FormHelper as FormHelper;
 
 define( 'WPDC_WISHLIST_PATH', plugin_dir_path( __FILE__ ) );
-define( 'WPDC_WISHLIST_URL', plugins_url( __FILE__ ) );
+define( 'WPDC_WISHLIST_URL', plugins_url( '',  __FILE__ ) );
 define( 'WPDC_WISHLIST_VERSION', '0.1' );
 
 add_action( 'plugins_loaded', __NAMESPACE__ . '\\init' );

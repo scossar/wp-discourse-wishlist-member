@@ -19,7 +19,13 @@ class Admin {
 		add_action( 'admin_menu', array( $this, 'add_groups_page' ) );
 		add_action( 'wpdc_options_page_append_settings_tabs', array( $this, 'settings_tab' ), 5, 1 );
 		add_action( 'wpdc_options_page_after_tab_switch', array( $this, 'discourse_wishlist_settings_fields' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 	}
+
+	public function enqueue_admin_scripts() {
+	    wp_register_style( 'dcwl_admin_styles', WPDC_WISHLIST_URL . '/admin/css/admin-styles.css' );
+	    wp_enqueue_style( 'dcwl_admin_styles' );
+    }
 
 	public function initialize_plugin() {
 		$this->options = DiscourseUtilities::get_options();
@@ -93,7 +99,7 @@ class Admin {
 				$level_id   = $level['id'];
 				$level_key  = "dcwl_groups[$level_id]";
 				?>
-                <tr>
+                <tr class="dcwl-options-row">
                     <td><?php echo $level_name; ?></td>
                     <td>
                         <select multiple
