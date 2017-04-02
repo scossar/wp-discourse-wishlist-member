@@ -30,7 +30,7 @@ class Admin {
 	public function initialize_plugin() {
 		$this->options = DiscourseUtilities::get_options();
 
-		add_settings_section( 'dcwl_settings_section', __( 'Discourse Wishlist Group Associations' ), array(
+		add_settings_section( 'dcwl_settings_section', __( 'Discourse Wishlist Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'settings_page_details',
 		), 'dcwl_groups' );
@@ -40,8 +40,28 @@ class Admin {
 			'discourse_wishlist_group_options',
 		), 'dcwl_groups', 'dcwl_settings_section' );
 
-		register_setting( 'dcwl_groups', 'dcwl_groups', array( $this->form_helper, 'validate_options' ) );
+		register_setting( 'dcwl_groups', 'dcwl_groups', array( $this, 'validate_options' ) );
 	}
+
+	public function validate_options( $input_array ) {
+	    $output = [];
+	    foreach( $input_array as $wl_group_id => $sub_array ) {
+	        $output_key = sanitize_key( $wl_group_id );
+	        if ( array_key_exists( 'dc_group_ids', $sub_array ) ) {
+	            $output[$output_key]['dc_group_ids'] = $sub_array['dc_group_ids'];
+            }
+
+            if ( array_key_exists( 'require_activation', $sub_array)) {
+	            $output[$output_key]['require_activation'] = intval( $sub_array['require_activation']);
+            }
+
+            if( array_key_exists( 'auto_remove', $sub_array)) {
+	            $output[$output_key]['auto_remove'] = intval( $sub_array['auto_remove']);
+            }
+        }
+
+	    return $output;
+    }
 
 	public function add_groups_page() {
 		add_submenu_page(
