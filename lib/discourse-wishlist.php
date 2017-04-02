@@ -40,7 +40,7 @@ class DiscourseWishlist {
 
 				foreach ( $discourse_groups as $discourse_group ) {
 
-					$this->add_user_to_group( $discourse_group);
+					$this->add_user_to_group( $user->user_login, $discourse_group );
 				}
 			}
 
@@ -56,6 +56,7 @@ class DiscourseWishlist {
 		$connection_options = get_option( 'discourse_connect' );
 		$base_url           = $connection_options['url'];
 		if ( $base_url ) {
+			// Try to get the user by external_id.
 			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$user_id.json" );
 			$response          = wp_remote_get( $external_user_url );
 
@@ -65,6 +66,7 @@ class DiscourseWishlist {
 				return $user_data['user']['id'];
 			}
 
+			// Try to get the user by email from active.json.
 			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json');
 
 			$users_url = add_query_arg( array(
@@ -80,9 +82,9 @@ class DiscourseWishlist {
 				return $user_data[0]['id'];
 			}
 
+			// Try to get the user from new.json?
 
-
-			// Create the Discourse user.
+			// User not found. Try to create the Discourse user.
 			$create_user_url = $base_url . '/users';
 			$api_key         = $connection_options['api-key'];
 			$api_username    = $connection_options['publish-username'];
@@ -115,13 +117,27 @@ class DiscourseWishlist {
 
 			return $user_data['id'];
 		}
+
+		return new \WP_Error( 'discourse_unable_to_create_user', 'The wp-discourse plugin is not configured.' );
 	}
 
-	protected function add_user_to_group( $discourse_group_id ) {
+	protected function add_user_to_group( $username, $discourse_group_id ) {
 		$connection_options = get_option( 'discourse_connect' );
 		$base_url           = $connection_options['url'];
-		if ( $base_url ) {
-			write_log('discourse_group', $discourse_group_id );
+		$api_key = $connection_options['api-key'];
+		$api_username = $connection_options['publish-username'];
+		if ( $base_url && $api_key && $api_username ) {
+			$add_to_group_url = $base_url . "/admin/groups/$discourse_group_id/members.json";
+			$response = wp_remote_post( $add_to_group_url, array(
+				'method' => 'PUT',
+				'body' => array(
+					'usernames' => $username,
+					'api_key' => $api_key,
+					'api_username' => $api_username,
+				),
+			));
+
+			write_log('discourse_group', $response );
 		}
 	}
 }
