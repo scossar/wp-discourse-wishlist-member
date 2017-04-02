@@ -29,12 +29,7 @@ class Admin {
 			'settings_page_details',
 		), 'dcwl_groups' );
 
-		add_settings_field( 'dcwl_enabled', __( 'Enable Discourse WishList Groups', 'wpdc-wishlist' ), array(
-			$this,
-			'setting_enabled_checkbox',
-		), 'dcwl_groupd', 'dcwl_settings_section' );
-
-		add_settings_field( 'dcwl_group_associations', __( 'Discourse Wishlist Group Associations', 'wpdc-wishlist' ), array(
+		add_settings_field( 'dcwl_groups', __( 'Discourse Wishlist Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'discourse_wishlist_group_options',
 		), 'dcwl_groups', 'dcwl_settings_section' );
@@ -80,34 +75,36 @@ class Admin {
 		<?php
 	}
 
-
-	// Todo: use this setting!
-	public function setting_enabled_checkbox() {
-		$this->form_helper->checkbox_input( 'dcwl_enabled', 'dcwl_options', __( 'Enable Discourse WishList groups.', 'wpdc-wishlist' ) );
-	}
-
 	public function discourse_wishlist_group_options() {
 		$levels           = $this->get_wishlist_levels();
 		$discourse_groups = $this->get_discourse_groups();
+		$dcwl_groups      = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
 		?>
         <tr>
             <th>WishList Level</th>
             <th>Discourse Group</th>
             <th>Require Email Activation</th>
+            <th>Auto Remove Users</th>
         </tr>
 		<?php if ( $levels && ! is_wp_error( $discourse_groups ) ) : ?>
 			<?php foreach ( $levels as $level ) : ?>
+				<?php
+				$level_name = $level['name'];
+				$level_id   = $level['id'];
+				$level_key  = "dcwl_groups[$level_id]";
+				?>
                 <tr>
-                    <td><?php echo $level['name'] ?></td>
+                    <td><?php echo $level_name; ?></td>
                     <td>
-						<?php
-						$dcwl_groups = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
-						?>
-                        <select multiple name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][id][]" class="widefat">
+                        <select multiple
+                                name="<?php echo $level_key; ?>[dc_group_ids][]"
+                                class="widefat">
 							<?php foreach ( $discourse_groups as $discourse_group ) : ?>
-                                <?php write_log('discourse group', $discourse_group); ?>
 								<?php
-								if ( array_key_exists( $level['id'], $dcwl_groups ) && in_array( $discourse_group['id'], $dcwl_groups[ $level['id'] ]['id'], false ) ) {
+								if ( array_key_exists( $level_id, $dcwl_groups ) &&
+								     array_key_exists( 'dc_group_ids', $dcwl_groups[ $level_id ] ) &&
+								     in_array( $discourse_group['id'], $dcwl_groups[ $level_id ]['dc_group_ids'], false )
+								) {
 									$selected = 'selected';
 								} else {
 									$selected = '';
@@ -120,10 +117,20 @@ class Admin {
                         </select>
                     </td>
                     <td>
-                        <?php
-                        $checked = $dcwl_groups[ $level['id']]['act'];
-                        ?>
-                        <input type="checkbox" name="dcwl_groups[<?php echo esc_attr( $level['id'] ); ?>][act]" value="1" <?php checked( $checked ); ?>>
+						<?php
+						$checked = $dcwl_groups[ $level_id ]['require_activation'];
+						?>
+                        <input type="hidden" value="0" name="<?php echo $level_key; ?>[require_activation]">
+                        <input type="checkbox" name="<?php echo $level_key; ?>[require_activation]"
+                               value="1" <?php checked( $checked ); ?>>
+
+                    </td>
+                    <td>
+						<?php
+						$checked = $dcwl_groups[ $level_id ]['auto_remove'];
+						?>
+                        <input type="checkbox" name="<?php echo $level_key; ?>[auto_remove]"
+                               value="1" <?php checked( $checked ); ?>>
 
                     </td>
                 </tr>
@@ -131,18 +138,4 @@ class Admin {
 		<?php endif; ?>
 		<?php
 	}
-
-	protected function group_select() {
-		$levels = $this->get_wishlist_levels();
-		if ( $levels ) {
-			foreach ( $levels as $level ) {
-				?>
-                <input type="text" name="dcwp_groups[<?php echo $level['id']; ?>][]"
-                       value="<?php echo $level['name']; ?>">
-
-				<?php
-			}
-		}
-	}
-
 }
