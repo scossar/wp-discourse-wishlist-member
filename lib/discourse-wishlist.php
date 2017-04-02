@@ -36,7 +36,7 @@ class DiscourseWishlist {
 			$discourse_user_id = $this->lookup_or_create_discourse_user( $user_id, $user );
 
 			if ( $discourse_user_id ) {
-				write_log('user id', $discourse_user_id);
+				write_log( 'user id', $discourse_user_id );
 
 				foreach ( $discourse_groups as $discourse_group ) {
 
@@ -67,11 +67,12 @@ class DiscourseWishlist {
 			}
 
 			// Try to get the user by email from active.json.
-			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json');
+			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
 
+			// Todo: are these parameters correct?
 			$users_url = add_query_arg( array(
-				'filter' => rawurlencode( $user->user_email ),
-				'api_key' => $connection_options['api-key'],
+				'filter'       => rawurlencode( $user->user_email ),
+				'api_key'      => $connection_options['api-key'],
 				'api_username' => $connection_options['publish-username'],
 			), $users_url );
 
@@ -79,8 +80,13 @@ class DiscourseWishlist {
 			if ( DiscourseUtilities::validate( $response ) ) {
 				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-				return $user_data[0]['id'];
+				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
+
+					return $user_data[0]['id'];
+				}
 			}
+
+			write_log( 'still here' );
 
 			// Try to get the user from new.json?
 
@@ -106,6 +112,7 @@ class DiscourseWishlist {
 					'email'        => $email,
 					'password'     => $password,
 					'username'     => $username,
+					'active'       => 'active',
 				),
 			) );
 
@@ -115,7 +122,15 @@ class DiscourseWishlist {
 
 			$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			return $user_data['id'];
+			if ( isset( $user_data[0] ) && isset( $user_data[0]['user_id'] ) ) {
+
+				$discourse_user_id = $user_data[0]['user_id'];
+
+				// Todo: make this optional.
+				update_user_meta( $user_id, 'discourse_email_not_verified', 1 );
+
+				return $discourse_user_id;
+			}
 		}
 
 		return new \WP_Error( 'discourse_unable_to_create_user', 'The wp-discourse plugin is not configured.' );
@@ -124,20 +139,18 @@ class DiscourseWishlist {
 	protected function add_user_to_group( $username, $discourse_group_id ) {
 		$connection_options = get_option( 'discourse_connect' );
 		$base_url           = $connection_options['url'];
-		$api_key = $connection_options['api-key'];
-		$api_username = $connection_options['publish-username'];
+		$api_key            = $connection_options['api-key'];
+		$api_username       = $connection_options['publish-username'];
 		if ( $base_url && $api_key && $api_username ) {
 			$add_to_group_url = $base_url . "/admin/groups/$discourse_group_id/members.json";
-			$response = wp_remote_post( $add_to_group_url, array(
+			$response         = wp_remote_post( $add_to_group_url, array(
 				'method' => 'PUT',
-				'body' => array(
-					'usernames' => $username,
-					'api_key' => $api_key,
+				'body'   => array(
+					'usernames'    => $username,
+					'api_key'      => $api_key,
 					'api_username' => $api_username,
 				),
-			));
-
-			write_log('discourse_group', $response );
+			) );
 		}
 	}
 }
