@@ -35,7 +35,7 @@ class Admin {
 			'settings_page_details',
 		), 'dcwl_groups' );
 
-		add_settings_field( 'dcwl_groups', __( 'Discourse Wishlist Groups', 'wpdc-wishlist' ), array(
+		add_settings_field( 'dcwl_groups', __( 'Levels and Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'discourse_wishlist_group_options',
 		), 'dcwl_groups', 'dcwl_settings_section' );
@@ -88,7 +88,19 @@ class Admin {
 
 	public function settings_page_details() {
 		?>
-        <p>Discourse Wishlist groups.</p>
+        <p>
+            <em>
+                <?php esc_html_e( "Discourse groups can be associated with WishList levels. When a group is associated
+                with a level, users will be automatically added to the Discourse group when then sign-up, or are added to
+                the WishList level.", 'wpdc-wishlist'); ?>
+            </em>
+        </p>
+        <p>
+            <em>
+                <?php esc_html_e( "Note: when using the WP Discourse plugin and the WishList plugin together, there is a
+                confilict with the WP Discourse 'auto create user' setting. Please disable that setting.", 'wpdc-wishlist' ); ?>
+            </em>
+        </p>
 		<?php
 	}
 

@@ -12,20 +12,25 @@ trait DiscourseWishlistUtilities {
 	}
 
 	public function get_discourse_groups() {
-		$groups      = $this->get_discourse_group_data();
-		$group_names = [];
+		$parsed_data = get_transient( 'wpdc_groups_data' );
+		if ( empty( $parsed_data ) ) {
+			$raw_groups_data = $this->get_discourse_groups_data();
+			$parsed_data     = [];
 
-		foreach ( $groups as $group ) {
-			$group_names[] = array(
-				'id' => $group['id'],
-				'name' => $group['name'],
-			);
+			foreach ( $raw_groups_data as $group ) {
+				$parsed_data[] = array(
+					'id'   => $group['id'],
+					'name' => $group['name'],
+				);
+			}
+
+			set_transient( 'wpdc_groups_data', $parsed_data, 10 * MINUTE_IN_SECONDS );
 		}
 
-		return $group_names;
+		return $parsed_data;
 	}
 
-	protected function get_discourse_group_data() {
+	protected function get_discourse_groups_data() {
 		$base_url = ! empty( $this->options['url'] ) ? $this->options['url'] : null;
 
 		if ( ! $base_url ) {
