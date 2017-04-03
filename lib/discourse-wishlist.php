@@ -5,6 +5,7 @@ namespace WPDCWishList;
 use WPDiscourse\Utilities\Utilities as DiscourseUtilities;
 
 class DiscourseWishlist {
+	use DiscourseWishlistUtilities;
 
 	protected $options;
 
@@ -17,7 +18,16 @@ class DiscourseWishlist {
 
 	public function init() {
 		add_action( 'init', array( $this, 'initialize_plugin' ) );
-		add_action( 'wishlistmember_add_user_levels', array( $this, 'add_discourse_groups' ), 10, 2 );
+		add_action( 'wishlistmember_add_user_levels', array( $this, 'add_unconfirmed_user_to_discourse_groups' ), 10, 2 );
+		add_action( 'wishlistmember_confirm_user_levels', array( $this, 'confirm_wishlist_level' ), 10, 2 );
+	}
+
+	public function confirm_wishlist_level( $user_id, $levels ) {
+		write_log( 'confirming registration - user ID', $user_id );
+		write_log( 'confirming registration - levels', $levels );
+		foreach ( $levels as $level_id ) {
+			$this->add_discourse_group( $user_id, $level_id );
+		}
 	}
 
 	public function initialize_plugin() {
@@ -25,14 +35,52 @@ class DiscourseWishlist {
 		$this->options = DiscourseUtilities::get_options();
 	}
 
+	public function add_unconfirmed_user_to_discourse_groups( $user_id, $levels ) {
+		foreach ( $levels as $level_id ) {
+			$level_data = wlmapi_get_level( $level_id );
+			$require_email_confirmation = isset( $level_data['level'] ) &&
+			                              isset( $level_data['level']['require_email_confirmation'] ) &&
+			                              1 === intval( $level_data['level']['require_email_confirmation'] );
+
+			if ( ! $require_email_confirmation ) {
+				$this->add_discourse_group( $user_id, $level_id );
+			}
+		}
+	}
+
+	public function add_discourse_group( $user_id, $level_id ) {
+		$dcwl_groups = get_option( 'dcwl_groups' );
+		$dcwl_group_associations = $dcwl_groups['dcwl_group_associations'];
+		if ( array_key_exists( $level_id, $dcwl_group_associations ) ) {
+			$discourse_groups = $dcwl_group_associations[$level_id]['dc_group_ids'];
+
+			if ( $discourse_groups ) {
+				$discourse_user_id = $this->lookup_or_create_discourse_user( $user_id );
+
+				if ( $discourse_user_id ) {
+					foreach ( $discourse_groups as $discourse_group ) {
+						$this->add_user_to_group( $discourse_user_id, $discourse_group );
+					}
+				}
+			}
+		}
+	}
+
 	public function add_discourse_groups( $user_id, $levels ) {
-		$dcwl_groups      = get_option( 'dcwl_groups' );
-		$user             = get_user_by( 'id', $user_id );
+		write_log( 'adding discourse group - levels', $levels );
+		$dcwl_groups             = get_option( 'dcwl_groups' );
+		$dcwl_group_associations = $dcwl_groups['dcwl_group_associations'];
+		$user                    = get_user_by( 'id', $user_id );
 		$discourse_groups = null;
 
 		foreach ( $levels as $level_id ) {
-			if ( array_key_exists( $level_id, $dcwl_groups ) ) {
-				$discourse_groups = $dcwl_groups[ $level_id ];
+			$level                      = wlmapi_get_level( $level_id );
+			$require_email_confirmation = isset( $level['level'] ) &&
+			                              isset( $level['level']['require_email_confirmation'] ) &&
+			                              1 === intval( $level['level']['require-email-confirmation'] );
+
+			if ( ! $require_email_confirmation && array_key_exists( $level_id, $dcwl_group_associations ) ) {
+				$discourse_groups = $dcwl_group_associations[ $level_id ]['dc_group_ids'];
 			}
 		}
 
@@ -40,107 +88,15 @@ class DiscourseWishlist {
 			$discourse_user_id = $this->lookup_or_create_discourse_user( $user_id, $user );
 
 			if ( $discourse_user_id ) {
-				write_log( 'user id', $discourse_user_id );
-
 				foreach ( $discourse_groups as $discourse_group ) {
 
 					$this->add_user_to_group( $user->user_login, $discourse_group );
 				}
 			}
-
 		}
-
-
-//		write_log( 'discourse_group_names', $discourse_group_names );
-//		write_log( 'discourse wishlist groups', $dcwl_groups );
-//		write_log( 'user', $user );
 	}
 
-	protected function lookup_or_create_discourse_user( $user_id, $user ) {
-		$connection_options = get_option( 'discourse_connect' );
-		$base_url           = $connection_options['url'];
-		if ( $base_url ) {
-			// Try to get the user by external_id.
-			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$user_id.json" );
-			$response          = wp_remote_get( $external_user_url );
-
-			if ( DiscourseUtilities::validate( $response ) ) {
-				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-				return $user_data['user']['id'];
-			}
-
-			// Try to get the user by email from active.json.
-			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
-
-			// Todo: are these parameters correct?
-			$users_url = add_query_arg( array(
-				'filter'       => rawurlencode( $user->user_email ),
-				'api_key'      => $connection_options['api-key'],
-				'api_username' => $connection_options['publish-username'],
-			), $users_url );
-
-			$response = wp_remote_get( $users_url );
-			if ( DiscourseUtilities::validate( $response ) ) {
-				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
-
-					return $user_data[0]['id'];
-				}
-			}
-
-			write_log( 'still here' );
-
-			// Try to get the user from new.json?
-
-			// User not found. Try to create the Discourse user.
-			$create_user_url = $base_url . '/users';
-			$api_key         = $connection_options['api-key'];
-			$api_username    = $connection_options['publish-username'];
-
-			if ( empty( $api_key ) && empty( $api_username ) ) {
-
-				return new \WP_Error( 'discourse_configuration_options_not_set', 'The Discourse configuration options have not been set.' );
-			}
-			$username = $user->user_login;
-			$name     = $user->display_name;
-			$email    = $user->user_email;
-			$password = wp_generate_password( 20 );
-			$response = wp_remote_post( $create_user_url, array(
-				'method' => 'POST',
-				'body'   => array(
-					'api_key'      => $api_key,
-					'api_username' => $api_username,
-					'name'         => $name,
-					'email'        => $email,
-					'password'     => $password,
-					'username'     => $username,
-					'active'       => 'active',
-				),
-			) );
-
-			if ( ! DiscourseUtilities::validate( $response ) ) {
-				return new \WP_Error( 'discourse_unable_to_create_user', 'An error was returned when trying to create the Discourse user for a WishList membership' );
-			}
-
-			$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			if ( isset( $user_data[0] ) && isset( $user_data[0]['user_id'] ) ) {
-
-				$discourse_user_id = $user_data[0]['user_id'];
-
-				// Todo: make this optional.
-				update_user_meta( $user_id, 'discourse_email_not_verified', 1 );
-
-				return $discourse_user_id;
-			}
-		}
-
-		return new \WP_Error( 'discourse_unable_to_create_user', 'The wp-discourse plugin is not configured.' );
-	}
-
-	protected function add_user_to_group( $username, $discourse_group_id ) {
+	protected function add_user_to_group( $user_id, $discourse_group_id ) {
 		$connection_options = get_option( 'discourse_connect' );
 		$base_url           = $connection_options['url'];
 		$api_key            = $connection_options['api-key'];
@@ -150,7 +106,7 @@ class DiscourseWishlist {
 			$response         = wp_remote_post( $add_to_group_url, array(
 				'method' => 'PUT',
 				'body'   => array(
-					'usernames'    => $username,
+					'user_ids'    => $user_id,
 					'api_key'      => $api_key,
 					'api_username' => $api_username,
 				),

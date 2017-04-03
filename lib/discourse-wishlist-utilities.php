@@ -75,4 +75,128 @@ trait DiscourseWishlistUtilities {
 
 		return null;
 	}
+
+	public function lookup_or_create_discourse_user( $user_id ) {
+		$user = get_user_by( 'id', $user_id );
+		$connection_options = get_option( 'discourse_connect' );
+		$base_url           = $connection_options['url'];
+		if ( $base_url ) {
+			// Try to get the user by external_id.
+			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$user_id.json" );
+			$response          = wp_remote_get( $external_user_url );
+
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				return $user_data['user']['id'];
+			}
+
+			// Try to get the user by email from active.json.
+			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
+
+			// Todo: are these parameters correct?
+			$users_url = add_query_arg( array(
+				'filter'       => rawurlencode( $user->user_email ),
+				'api_key'      => $connection_options['api-key'],
+				'api_username' => $connection_options['publish-username'],
+			), $users_url );
+
+			$response = wp_remote_get( $users_url );
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
+
+					return $user_data[0]['id'];
+				}
+			}
+			// Try to get the user from new.json?
+
+			// User not found. Try to create the Discourse user.
+			$create_user_url = $base_url . '/users';
+			$api_key         = $connection_options['api-key'];
+			$api_username    = $connection_options['publish-username'];
+
+			if ( empty( $api_key ) && empty( $api_username ) ) {
+
+				return new \WP_Error( 'discourse_configuration_options_not_set', 'The Discourse configuration options have not been set.' );
+			}
+			$username = $user->user_login;
+			$name     = $user->display_name;
+			$email    = $user->user_email;
+			$password = wp_generate_password( 20 );
+			$response = wp_remote_post( $create_user_url, array(
+				'method' => 'POST',
+				'body'   => array(
+					'api_key'      => $api_key,
+					'api_username' => $api_username,
+					'name'         => $name,
+					'email'        => $email,
+					'password'     => $password,
+					'username'     => $username,
+					'active'       => 'active',
+				),
+			) );
+
+			if ( ! DiscourseUtilities::validate( $response ) ) {
+				return new \WP_Error( 'discourse_unable_to_create_user', 'An error was returned when trying to create the Discourse user for a WishList membership' );
+			}
+
+			$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+			write_log( 'new user data', $user_data );
+
+			if ( isset( $user_data['user_id'] ) ) {
+
+				$discourse_user_id = $user_data['user_id'];
+
+				// Todo: make this optional.
+//				update_user_meta( $user_id, 'discourse_email_not_verified', 1 );
+
+				return $discourse_user_id;
+			}
+		}
+	}
+
+	public function lookup_discourse_user( $wp_user ) {
+		$connection_options = get_option( 'discourse_connect' );
+		$base_url           = $connection_options['url'];
+
+		if ( $base_url ) {
+			// Try to get the user by external_id.
+			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$wp_user->ID.json" );
+			$response          = wp_remote_get( $external_user_url );
+			write_log( 'user found by external id', $response);
+
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				return $user_data['user']['id'];
+			}
+
+			// Try to get the user by email from active.json.
+			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
+
+			$users_url = add_query_arg( array(
+				'filter'       => rawurlencode( $wp_user->user_email ),
+				'api_key'      => $connection_options['api-key'],
+				'api_username' => $connection_options['publish-username'],
+			), $users_url );
+
+			$response = wp_remote_get( $users_url );
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+				write_log('user found by email', $user_data);
+
+				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
+
+					return $user_data[0]['id'];
+				}
+			}
+
+			// The user doesn't exist yet.
+			return null;
+		}
+
+		return new \WP_Error( 'unable_to_find_user', 'The WP Discourse plugin is not properly configured.' );
+	}
 }
