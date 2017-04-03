@@ -23,9 +23,9 @@ class Admin {
 	}
 
 	public function enqueue_admin_scripts() {
-	    wp_register_style( 'dcwl_admin_styles', WPDC_WISHLIST_URL . '/admin/css/admin-styles.css' );
-	    wp_enqueue_style( 'dcwl_admin_styles' );
-    }
+		wp_register_style( 'dcwl_admin_styles', WPDC_WISHLIST_URL . '/admin/css/admin-styles.css' );
+		wp_enqueue_style( 'dcwl_admin_styles' );
+	}
 
 	public function initialize_plugin() {
 		$this->options = DiscourseUtilities::get_options();
@@ -44,24 +44,27 @@ class Admin {
 	}
 
 	public function validate_options( $input_array ) {
-	    $output = [];
-	    foreach( $input_array as $wl_group_id => $sub_array ) {
-	        $output_key = sanitize_key( $wl_group_id );
-	        if ( array_key_exists( 'dc_group_ids', $sub_array ) ) {
-	            $output[$output_key]['dc_group_ids'] = $sub_array['dc_group_ids'];
-            }
+		$output = [];
 
-            if ( array_key_exists( 'require_activation', $sub_array)) {
-	            $output[$output_key]['require_activation'] = intval( $sub_array['require_activation']);
-            }
+		$group_associations = $input_array['dcwl_group_associations'];
 
-            if( array_key_exists( 'auto_remove', $sub_array)) {
-	            $output[$output_key]['auto_remove'] = intval( $sub_array['auto_remove']);
-            }
-        }
+		foreach ( $group_associations as $wl_group_id => $sub_array ) {
+			$output_key = sanitize_key( $wl_group_id );
+			if ( array_key_exists( 'dc_group_ids', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['dc_group_ids'] = $sub_array['dc_group_ids'];
+			}
 
-	    return $output;
-    }
+			if ( array_key_exists( 'require_activation', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['require_activation'] = intval( $sub_array['require_activation'] );
+			}
+
+			if ( array_key_exists( 'auto_remove', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['auto_remove'] = intval( $sub_array['auto_remove'] );
+			}
+		}
+
+		return $output;
+	}
 
 	public function add_groups_page() {
 		add_submenu_page(
@@ -90,14 +93,14 @@ class Admin {
 		?>
         <p>
             <em>
-                <?php esc_html_e( "Discourse groups can be associated with WishList levels. When a group is associated
+				<?php esc_html_e( "Discourse groups can be associated with WishList levels. When a group is associated
                 with a level, users will be automatically added to the Discourse group when then sign-up, or are added to
-                the WishList level.", 'wpdc-wishlist'); ?>
+                the WishList level.", 'wpdc-wishlist' ); ?>
             </em>
         </p>
         <p>
             <em>
-                <?php esc_html_e( "Note: when using the WP Discourse plugin and the WishList plugin together, there is a
+				<?php esc_html_e( "Note: when using the WP Discourse plugin and the WishList plugin together, there is a
                 confilict with the WP Discourse 'auto create user' setting. Please disable that setting.", 'wpdc-wishlist' ); ?>
             </em>
         </p>
@@ -129,7 +132,7 @@ class Admin {
 				<?php
 				$level_name = $level['name'];
 				$level_id   = $level['id'];
-				$level_key  = "dcwl_groups[$level_id]";
+				$level_key  = "dcwl_groups[dcwl_group_associations][$level_id]";
 				?>
                 <tr class="dcwl-options-row">
                     <td><?php echo $level_name; ?></td>
@@ -139,9 +142,9 @@ class Admin {
                                 class="widefat">
 							<?php foreach ( $discourse_groups as $discourse_group ) : ?>
 								<?php
-								if ( array_key_exists( $level_id, $dcwl_groups ) &&
-								     array_key_exists( 'dc_group_ids', $dcwl_groups[ $level_id ] ) &&
-								     in_array( $discourse_group['id'], $dcwl_groups[ $level_id ]['dc_group_ids'], false )
+								if ( array_key_exists( $level_id, $dcwl_groups['dcwl_group_associations'] ) &&
+								     array_key_exists( 'dc_group_ids', $dcwl_groups['dcwl_group_associations'][ $level_id ] ) &&
+								     in_array( $discourse_group['id'], $dcwl_groups['dcwl_group_associations'][ $level_id ]['dc_group_ids'], false )
 								) {
 									$selected = 'selected';
 								} else {
@@ -156,7 +159,7 @@ class Admin {
                     </td>
                     <td>
 						<?php
-						$checked = $dcwl_groups[ $level_id ]['require_activation'];
+						$checked = $dcwl_groups['dcwl_group_associations'][ $level_id ]['require_activation'];
 						?>
                         <input type="hidden" value="0" name="<?php echo $level_key; ?>[require_activation]">
                         <input type="checkbox" name="<?php echo $level_key; ?>[require_activation]"
@@ -165,7 +168,7 @@ class Admin {
                     </td>
                     <td>
 						<?php
-						$checked = $dcwl_groups[ $level_id ]['auto_remove'];
+						$checked = $dcwl_groups['dcwl_group_associations'][ $level_id ]['auto_remove'];
 						?>
                         <input type="hidden" value="0" name="<?php echo $level_key; ?>[auto_remove]">
                         <input type="checkbox" name="<?php echo $level_key; ?>[auto_remove]"

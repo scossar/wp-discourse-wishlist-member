@@ -8,6 +8,10 @@ class DiscourseWishlist {
 
 	protected $options;
 
+	protected $dcwl_groups = array(
+		'dcwl_group_associations' => array(),
+	);
+
 	public function __construct() {
 	}
 
@@ -17,7 +21,7 @@ class DiscourseWishlist {
 	}
 
 	public function initialize_plugin() {
-		add_option( 'dcwl_groups', array() );
+		add_option( 'dcwl_groups', $this->dcwl_groups );
 		$this->options = DiscourseUtilities::get_options();
 	}
 

@@ -12,19 +12,22 @@ trait DiscourseWishlistUtilities {
 	}
 
 	public function get_discourse_groups() {
-		$parsed_data = get_transient( 'wpdc_groups_data' );
+		$raw_groups_data = $this->get_discourse_groups_data();
+		$parsed_data     = [];
+
+		foreach ( $raw_groups_data as $group ) {
+			$parsed_data[] = array(
+				'id'   => $group['id'],
+				'name' => $group['name'],
+			);
+		}
+
+		// This should be set to a reasonable amount of time and only retrieved when empty, but first there needs to be
+		// a setting added to the options page to override it.
+		set_transient( 'wpdc_groups_data', $parsed_data, 10 );
+
 		if ( empty( $parsed_data ) ) {
-			$raw_groups_data = $this->get_discourse_groups_data();
-			$parsed_data     = [];
-
-			foreach ( $raw_groups_data as $group ) {
-				$parsed_data[] = array(
-					'id'   => $group['id'],
-					'name' => $group['name'],
-				);
-			}
-
-			set_transient( 'wpdc_groups_data', $parsed_data, 10 * MINUTE_IN_SECONDS );
+			$parsed_data = get_transient( 'wpdc_groups_data' );
 		}
 
 		return $parsed_data;
@@ -39,7 +42,7 @@ trait DiscourseWishlistUtilities {
 		}
 
 		$groups_url = $base_url . '/groups.json';
-		$response   = wp_remote_get( $groups_url );
+		$response   = wp_remote_get( esc_url( $groups_url ) );
 
 		if ( ! DiscourseUtilities::validate( $response ) ) {
 
