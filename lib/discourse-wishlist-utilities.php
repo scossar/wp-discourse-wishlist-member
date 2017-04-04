@@ -207,6 +207,6 @@ trait DiscourseWishlistUtilities {
 			return $discourse_user_id;
 		}
 
-		return new \WP_Error( 'discourse_user_not_created', "The Disocourse user could not be created." );
+		return new \WP_Error( 'discourse_user_not_created', 'The Disocourse user could not be created.' );
 	}
 }

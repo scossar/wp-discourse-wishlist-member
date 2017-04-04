@@ -17,11 +17,11 @@ class DiscourseWishlist {
 		add_action( 'init', array( $this, 'initialize_plugin' ) );
 		add_action( 'wishlistmember_add_user_levels', array(
 			$this,
-			'add_unconfirmed_member_to_discourse_groups'
+			'add_unconfirmed_member_to_discourse_groups',
 		), 10, 2 );
 		add_action( 'wishlistmember_confirm_user_levels', array(
 			$this,
-			'add_confirmed_member_to_discourse_group'
+			'add_confirmed_member_to_discourse_group',
 		), 10, 2 );
 		add_action( 'wishlistmember_remove_user_levels', array( $this, 'remove_member_from_discourse_groups' ), 10, 2 );
 	}

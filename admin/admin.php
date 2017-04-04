@@ -34,7 +34,6 @@ class Admin {
 			'settings_page_details',
 		), 'dcwl_groups' );
 
-
 		add_settings_field( 'dcwl_groups', __( 'Levels and Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'discourse_wishlist_group_options',
@@ -55,7 +54,7 @@ class Admin {
 			__( 'WishList Groups', 'wpdc-wishlist' ),
 			'manage_options',
 			'wpdc_wishlist_options',
-			array( $this, 'dcwl_options_tab' ) );
+		array( $this, 'dcwl_options_tab' ) );
 	}
 
 	public function discourse_wishlist_settings_fields( $tab ) {
@@ -73,44 +72,44 @@ class Admin {
 
 	public function settings_page_details() {
 		?>
-        <p>
-            <em>
-				<?php esc_html_e( "Discourse groups can be associated with WishList levels. When groups are associated
+		<p>
+			<em>
+				<?php esc_html_e( 'Discourse groups can be associated with WishList levels. When groups are associated
                 with a level, users will be automatically added to the Discourse groups when then sign-up, or are added to
-                the WishList level.", 'wpdc-wishlist' ); ?>
-            </em>
-        </p>
-        <p>
-            <em>
-                <strong><?php esc_html_e( "Note: ", 'wpdc-wishlist' ); ?></strong>
+                the WishList level.', 'wpdc-wishlist' ); ?>
+			</em>
+		</p>
+		<p>
+			<em>
+				<strong><?php esc_html_e( 'Note: ', 'wpdc-wishlist' ); ?></strong>
 				<?php esc_html_e( "when using the WP Discourse plugin and the WishList plugin together, there is a
                 confilict with the WP Discourse 'auto create user' setting. Please disable that setting.", 'wpdc-wishlist' ); ?>
-            </em>
-        </p>
-        <p>
-            <em>
-                <strong><?php esc_html_e( "This plugin is in the development stage.", 'wpdc-wishlist' ); ?></strong>
-                    <?php esc_html_e( "Don't install it on a huge site quite yet. There are a few issues with email verification that need to be sorted out.
+			</em>
+		</p>
+		<p>
+			<em>
+				<strong><?php esc_html_e( 'This plugin is in the development stage.', 'wpdc-wishlist' ); ?></strong>
+					<?php esc_html_e( "Don't install it on a huge site quite yet. There are a few issues with email verification that need to be sorted out.
                     The safest way to use it at the moment is to either require email confirmation for a WishList level, or to enable the setting
                     'Require Email Verification' on this page.", 'wp-discourse' ); ?>
-            </em>
-        </p>
+			</em>
+		</p>
 		<?php
 	}
 
 	public function settings_tab( $tab ) {
 		$active = 'wpdc_wishlist_options' === $tab;
 		?>
-        <a href="?page=wp_discourse_options&tab=wpdc_wishlist_options"
-           class="nav-tab <?php echo $active ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'WishList Groups', 'wpdc-wishlist' ); ?>
-        </a>
+		<a href="?page=wp_discourse_options&tab=wpdc_wishlist_options"
+		   class="nav-tab <?php echo $active ? 'nav-tab-active' : ''; ?>"><?php esc_html_e( 'WishList Groups', 'wpdc-wishlist' ); ?>
+		</a>
 		<?php
 	}
 
 	public function update_discourse_groups_checkbox() {
 		?>
-        <input type="checkbox" name="dcwl_groups[dcwl_update_discourse_groups]" value="1">
-        <p><?php esc_html_e( "Update Discourse groups list (normally set to refresh every hour.)", 'wpdc-wishlist' ); ?></p>
+		<input type="checkbox" name="dcwl_groups[dcwl_update_discourse_groups]" value="1">
+		<p><?php esc_html_e( 'Update Discourse groups list (normally set to refresh every hour.)', 'wpdc-wishlist' ); ?></p>
 		<?php
 	}
 
@@ -120,12 +119,12 @@ class Admin {
 		$dcwl_groups      = $this->dcwl_options;
 		?>
 
-        <tr>
-            <th>WishList Level</th>
-            <th>Discourse Groups</th>
-            <th>Require Email Verification</th>
-            <th>Auto Remove Users</th>
-        </tr>
+		<tr>
+			<th>WishList Level</th>
+			<th>Discourse Groups</th>
+			<th>Require Email Verification</th>
+			<th>Auto Remove Users</th>
+		</tr>
 
 		<?php if ( $levels && ! is_wp_error( $discourse_groups ) ) : ?>
 			<?php foreach ( $levels as $level ) : ?>
@@ -134,12 +133,12 @@ class Admin {
 				$level_id   = $level['id'];
 				$level_key  = "dcwl_groups[dcwl_group_associations][$level_id]";
 				?>
-                <tr class="dcwl-options-row">
-                    <td><?php echo $level_name; ?></td>
-                    <td>
-                        <select multiple
-                                name="<?php echo $level_key; ?>[dc_group_ids][]"
-                                class="widefat">
+				<tr class="dcwl-options-row">
+					<td><?php echo $level_name; ?></td>
+					<td>
+						<select multiple
+								name="<?php echo $level_key; ?>[dc_group_ids][]"
+								class="widefat">
 							<?php foreach ( $discourse_groups as $discourse_group ) : ?>
 								<?php
 								if ( array_key_exists( $level_id, $dcwl_groups['dcwl_group_associations'] ) &&
@@ -152,30 +151,30 @@ class Admin {
 								}
 
 								?>
-                                <option <?php echo esc_attr( $selected ); ?>
-                                        value="<?php echo esc_attr( $discourse_group['id'] ); ?>"><?php echo esc_attr( $discourse_group['name'] ); ?></option>
+								<option <?php echo esc_attr( $selected ); ?>
+										value="<?php echo esc_attr( $discourse_group['id'] ); ?>"><?php echo esc_attr( $discourse_group['name'] ); ?></option>
 							<?php endforeach; ?>
-                        </select>
-                    </td>
-                    <td>
+						</select>
+					</td>
+					<td>
 						<?php
 						$checked = $dcwl_groups['dcwl_group_associations'][ $level_id ]['require_activation'];
 						?>
-                        <input type="hidden" value="0" name="<?php echo $level_key; ?>[require_activation]">
-                        <input type="checkbox" name="<?php echo $level_key; ?>[require_activation]"
-                               value="1" <?php checked( $checked ); ?>>
+						<input type="hidden" value="0" name="<?php echo $level_key; ?>[require_activation]">
+						<input type="checkbox" name="<?php echo $level_key; ?>[require_activation]"
+							   value="1" <?php checked( $checked ); ?>>
 
-                    </td>
-                    <td>
+					</td>
+					<td>
 						<?php
 						$checked = $dcwl_groups['dcwl_group_associations'][ $level_id ]['auto_remove'];
 						?>
-                        <input type="hidden" value="0" name="<?php echo $level_key; ?>[auto_remove]">
-                        <input type="checkbox" name="<?php echo $level_key; ?>[auto_remove]"
-                               value="1" <?php checked( $checked ); ?>>
+						<input type="hidden" value="0" name="<?php echo $level_key; ?>[auto_remove]">
+						<input type="checkbox" name="<?php echo $level_key; ?>[auto_remove]"
+							   value="1" <?php checked( $checked ); ?>>
 
-                    </td>
-                </tr>
+					</td>
+				</tr>
 			<?php endforeach; ?>
 		<?php endif; ?>
 		<?php
@@ -201,7 +200,7 @@ class Admin {
 			}
 		}
 
-		$update_groups = isset( $input_array['dcwl_update_discourse_groups']) ? $input_array['dcwl_update_discourse_groups'] : 0;
+		$update_groups = isset( $input_array['dcwl_update_discourse_groups'] ) ? $input_array['dcwl_update_discourse_groups'] : 0;
 
 		$output['dcwl_update_discourse_groups'] = intval( $update_groups );
 
