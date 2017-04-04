@@ -29,7 +29,7 @@ class Admin {
 	public function initialize_plugin() {
 		$this->dcwl_options = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
 
-		add_settings_section( 'dcwl_settings_section', __( 'Discourse Wishlist Groups', 'wpdc-wishlist' ), array(
+		add_settings_section( 'dcwl_settings_section', __( 'Discourse WishList Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'settings_page_details',
 		), 'dcwl_groups' );
@@ -75,15 +75,24 @@ class Admin {
 		?>
         <p>
             <em>
-				<?php esc_html_e( "Discourse groups can be associated with WishList levels. When a group is associated
-                with a level, users will be automatically added to the Discourse group when then sign-up, or are added to
+				<?php esc_html_e( "Discourse groups can be associated with WishList levels. When groups are associated
+                with a level, users will be automatically added to the Discourse groups when then sign-up, or are added to
                 the WishList level.", 'wpdc-wishlist' ); ?>
             </em>
         </p>
         <p>
             <em>
-				<?php esc_html_e( "Note: when using the WP Discourse plugin and the WishList plugin together, there is a
+                <strong><?php esc_html_e( "Note: ", 'wpdc-wishlist' ); ?></strong>
+				<?php esc_html_e( "when using the WP Discourse plugin and the WishList plugin together, there is a
                 confilict with the WP Discourse 'auto create user' setting. Please disable that setting.", 'wpdc-wishlist' ); ?>
+            </em>
+        </p>
+        <p>
+            <em>
+                <strong><?php esc_html_e( "This plugin is in the development stage.", 'wpdc-wishlist' ); ?></strong>
+                    <?php esc_html_e( "Don't install it on a huge site quite yet. There are a few issues with email verification that need to be sorted out.
+                    The safest way to use it at the moment is to either require email confirmation for a WishList level, or to enable the setting
+                    'Require Email Verification' on this page.", 'wp-discourse' ); ?>
             </em>
         </p>
 		<?php
@@ -113,8 +122,8 @@ class Admin {
 
         <tr>
             <th>WishList Level</th>
-            <th>Discourse Group</th>
-            <th>Require Email Activation</th>
+            <th>Discourse Groups</th>
+            <th>Require Email Verification</th>
             <th>Auto Remove Users</th>
         </tr>
 
