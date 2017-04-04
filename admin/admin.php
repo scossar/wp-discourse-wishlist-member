@@ -92,7 +92,6 @@ class Admin {
 	public function discourse_wishlist_group_options() {
 		$levels           = $this->get_wishlist_levels();
 		$discourse_groups = $this->get_discourse_groups();
-		write_log('discourse groups', $discourse_groups );
 		$dcwl_groups      = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
 		?>
         <tr>

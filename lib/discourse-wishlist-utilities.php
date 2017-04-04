@@ -33,13 +33,13 @@ trait DiscourseWishlistUtilities {
 		return $parsed_data;
 	}
 
-	public function lookup_or_create_discourse_user( $user_id ) {
+	public function lookup_or_create_discourse_user( $user_id, $force_email_verification ) {
 		$user = get_user_by( 'id', $user_id );
 
 		$discourse_user_id = $this->lookup_discourse_user( $user );
 
 		if ( ! $discourse_user_id || is_wp_error( $discourse_user_id ) ) {
-			$discourse_user_id = $this->create_discourse_user( $user );
+			$discourse_user_id = $this->create_discourse_user( $user, $force_email_verification );
 		}
 
 		return $discourse_user_id;
@@ -132,7 +132,6 @@ trait DiscourseWishlistUtilities {
 			$response = wp_remote_get( $users_url );
 			if ( DiscourseUtilities::validate( $response ) ) {
 				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-				write_log( 'user found by email', $user_data );
 
 				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
 
@@ -147,12 +146,12 @@ trait DiscourseWishlistUtilities {
 		return new \WP_Error( 'discourse_configuration_error', 'Unable to retrieve user. The WP Discourse plugin is not properly configured.' );
 	}
 
-	protected function create_discourse_user( $user ) {
+	protected function create_discourse_user( $user, $force_email_verification ) {
 
 		$base_url        = $this->get_connection_option( 'url' );
 		$create_user_url = $base_url . '/users';
-		$api_key         = $this->connection_options( 'api-key' );
-		$api_username    = $this->connection_options( 'publish-username' );
+		$api_key         = $this->get_connection_option( 'api-key' );
+		$api_username    = $this->get_connection_option( 'publish-username' );
 
 		if ( empty( $api_key ) && empty( $api_username ) ) {
 
@@ -185,8 +184,14 @@ trait DiscourseWishlistUtilities {
 
 			$discourse_user_id = $user_data['user_id'];
 
-			// Todo: make this optional.
-//				update_user_meta( $user_id, 'discourse_email_not_verified', 1 );
+			// Force email verification for the initial SSO login.
+			if ( $force_email_verification ) {
+
+				update_user_meta( $user->ID, 'discourse_email_not_verified', 1 );
+			} else {
+
+				delete_user_meta( $user->ID, 'discourse_email_not_verified' );
+			}
 
 			return $discourse_user_id;
 		}
