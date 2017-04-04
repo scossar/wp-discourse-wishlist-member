@@ -27,7 +27,7 @@ class DiscourseWishlist {
 
 	public function confirm_wishlist_level( $user_id, $levels ) {
 		foreach ( $levels as $level_id ) {
-			$this->add_discourse_group( $user_id, $level_id );
+			$this->add_member_to_discourse_group( $user_id, $level_id );
 		}
 	}
 
@@ -49,12 +49,12 @@ class DiscourseWishlist {
 			                              ! $admin_registration;
 
 			if ( ! $require_email_confirmation ) {
-				$this->add_discourse_group( $user_id, $level_id );
+				$this->add_member_to_discourse_group( $user_id, $level_id );
 			}
 		}
 	}
 
-	public function add_discourse_group( $user_id, $level_id ) {
+	protected function add_member_to_discourse_group( $user_id, $level_id ) {
 		$dcwl_groups             = get_option( 'dcwl_groups' );
 		$dcwl_group_associations = $dcwl_groups['dcwl_group_associations'];
 		if ( array_key_exists( $level_id, $dcwl_group_associations ) ) {
@@ -88,6 +88,10 @@ class DiscourseWishlist {
 					'api_username' => $api_username,
 				),
 			) );
+
+			return wp_remote_retrieve_response_code( $response );
 		}
+
+		return new \WP_Error( 'unable_to_add_user_to_discourse_group', "The Discourse settings aren't properly configured." );
 	}
 }
