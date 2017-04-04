@@ -28,7 +28,6 @@
 namespace WPDCWishList;
 
 use \WPDiscourse\Admin\OptionsPage as OptionsPage;
-use \WPDiscourse\Admin\FormHelper as FormHelper;
 
 define( 'WPDC_WISHLIST_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WPDC_WISHLIST_URL', plugins_url( '',  __FILE__ ) );
@@ -40,6 +39,7 @@ function init() {
 
 		require_once( __DIR__ . '/lib/discourse-wishlist-utilities.php' );
 		require_once( __DIR__ . '/lib/discourse-wishlist.php' );
+
 		$wpdc_wishlist = new DiscourseWishlist();
 		$wpdc_wishlist->init();
 
@@ -47,9 +47,9 @@ function init() {
 			require_once( __DIR__ . '/admin/admin.php' );
 
 			$options_page = OptionsPage::get_instance();
-			$form_helper  = FormHelper::get_instance();
 
-			new Admin( $options_page, $form_helper );
+			$wpdc_wishlist_admin = new Admin( $options_page );
+			$wpdc_wishlist_admin->init();
 		}
 	}
 }
