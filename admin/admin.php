@@ -7,6 +7,8 @@ class Admin {
 
 	protected $options_page;
 
+	protected $dcwl_options;
+
 	public function __construct( $options_page ) {
 		$this->options_page = $options_page;
 	}
@@ -17,7 +19,7 @@ class Admin {
 		add_action( 'wpdc_options_page_append_settings_tabs', array( $this, 'settings_tab' ), 5, 1 );
 		add_action( 'wpdc_options_page_after_tab_switch', array( $this, 'discourse_wishlist_settings_fields' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
-    }
+	}
 
 	public function enqueue_admin_scripts() {
 		wp_register_style( 'dcwl_admin_styles', WPDC_WISHLIST_URL . '/admin/css/admin-styles.css' );
@@ -25,19 +27,26 @@ class Admin {
 	}
 
 	public function initialize_plugin() {
+		$this->dcwl_options = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
+
 		add_settings_section( 'dcwl_settings_section', __( 'Discourse Wishlist Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'settings_page_details',
 		), 'dcwl_groups' );
+
 
 		add_settings_field( 'dcwl_groups', __( 'Levels and Groups', 'wpdc-wishlist' ), array(
 			$this,
 			'discourse_wishlist_group_options',
 		), 'dcwl_groups', 'dcwl_settings_section' );
 
+		add_settings_field( 'dcwl_update_groups', __( 'Update Discourse Groups', 'wpdc-wishlist' ), array(
+			$this,
+			'update_discourse_groups_checkbox',
+		), 'dcwl_groups', 'dcwl_settings_section' );
+
 		register_setting( 'dcwl_groups', 'dcwl_groups', array( $this, 'validate_options' ) );
 	}
-
 
 	public function add_groups_page() {
 		add_submenu_page(
@@ -89,17 +98,26 @@ class Admin {
 		<?php
 	}
 
+	public function update_discourse_groups_checkbox() {
+		?>
+        <input type="checkbox" name="dcwl_groups[dcwl_update_discourse_groups]" value="1">
+        <p><?php esc_html_e( "Update Discourse groups list (normally set to refresh every hour.)", 'wpdc-wishlist' ); ?></p>
+		<?php
+	}
+
 	public function discourse_wishlist_group_options() {
 		$levels           = $this->get_wishlist_levels();
 		$discourse_groups = $this->get_discourse_groups();
-		$dcwl_groups      = get_option( 'dcwl_groups' ) ? get_option( 'dcwl_groups' ) : array();
+		$dcwl_groups      = $this->dcwl_options;
 		?>
+
         <tr>
             <th>WishList Level</th>
             <th>Discourse Group</th>
             <th>Require Email Activation</th>
             <th>Auto Remove Users</th>
         </tr>
+
 		<?php if ( $levels && ! is_wp_error( $discourse_groups ) ) : ?>
 			<?php foreach ( $levels as $level ) : ?>
 				<?php
@@ -154,7 +172,7 @@ class Admin {
 		<?php
 	}
 
-	protected function validate_options( $input_array ) {
+	public function validate_options( $input_array ) {
 		$output = [];
 
 		$group_associations = $input_array['dcwl_group_associations'];
@@ -173,6 +191,10 @@ class Admin {
 				$output['dcwl_group_associations'][ $output_key ]['auto_remove'] = intval( $sub_array['auto_remove'] );
 			}
 		}
+
+		$update_groups = isset( $input_array['dcwl_update_discourse_groups']) ? $input_array['dcwl_update_discourse_groups'] : 0;
+
+		$output['dcwl_update_discourse_groups'] = intval( $update_groups );
 
 		return $output;
 	}
