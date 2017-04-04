@@ -113,15 +113,17 @@ class DiscourseWishlist {
 			$discourse_groups = $level['dc_group_ids'];
 
 			if ( $discourse_groups ) {
-				$wp_user           = get_user_by( 'id', $user_id );
-				$discourse_user_id = $this->lookup_discourse_user( $wp_user );
+				$wp_user = get_user_by( 'id', $user_id );
+				if ( $auto_remove ) {
+					$discourse_user_id = $this->lookup_discourse_user( $wp_user );
 
-				if ( $discourse_user_id && ! is_wp_error( $discourse_user_id ) && $auto_remove ) {
+					if ( $discourse_user_id && ! is_wp_error( $discourse_user_id ) ) {
 
-					foreach ( $discourse_groups as $discourse_group ) {
+						foreach ( $discourse_groups as $discourse_group ) {
 
-						// This method returns the response code, something could be done with it.
-						$this->remove_user_from_group( $discourse_user_id, $discourse_group );
+							// This method returns the response code, something could be done with it.
+							$this->remove_user_from_group( $discourse_user_id, $discourse_group );
+						}
 					}
 				}
 			}
@@ -141,7 +143,7 @@ class DiscourseWishlist {
 			$response              = wp_remote_post( $remove_from_group_url, array(
 				'method' => 'DELETE',
 				'body'   => array(
-					'user_id'     => $discourse_user_id,
+					'user_id'      => $discourse_user_id,
 					'api_key'      => $api_key,
 					'api_username' => $api_username,
 				),

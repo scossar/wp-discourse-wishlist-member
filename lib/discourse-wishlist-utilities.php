@@ -12,22 +12,33 @@ trait DiscourseWishlistUtilities {
 	}
 
 	public function get_discourse_groups() {
-		$raw_groups_data = $this->get_discourse_groups_data();
-		$parsed_data     = [];
+		$dcwl_options = get_option( 'dcwl_groups' );
 
-		foreach ( $raw_groups_data as $group ) {
-			$parsed_data[] = array(
-				'id'   => $group['id'],
-				'name' => $group['name'],
-			);
+		if ( ! $dcwl_options ) {
+
+			return new \WP_Error( 'discourse_configuration_error', "Unable to retrieve Discourse groups. The WP Discourse plugin isn't properly configured." );
 		}
 
-		// This should be set to a reasonable amount of time and only retrieved when empty, but first there needs to be
-		// a setting added to the options page to override it.
-		set_transient( 'wpdc_groups_data', $parsed_data, 10 );
+		$force_update = isset( $dcwl_options['dcwl_update_discourse_groups'] ) ? $dcwl_options['dcwl_update_discourse_groups'] : 0;
 
-		if ( empty( $parsed_data ) ) {
-			$parsed_data = get_transient( 'wpdc_groups_data' );
+		$parsed_data = get_transient( 'wpdc_groups_data' );
+
+		if ( empty( $parsed_data ) || $force_update ) {
+			$raw_groups_data = $this->get_discourse_groups_data();
+			$parsed_data     = [];
+
+			foreach ( $raw_groups_data as $group ) {
+				$parsed_data[] = array(
+					'id'   => $group['id'],
+					'name' => $group['name'],
+				);
+			}
+
+			set_transient( 'wpdc_groups_data', $parsed_data, 10 * MINUTE_IN_SECONDS );
+
+			// Reset the 'dcwl_update_discourse_groups' option so that the transient is used.
+			$dcwl_options['dcwl_update_discourse_groups'] = 0;
+			update_option( 'dcwl_groups', $dcwl_options );
 		}
 
 		return $parsed_data;
