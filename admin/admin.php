@@ -43,28 +43,6 @@ class Admin {
 		register_setting( 'dcwl_groups', 'dcwl_groups', array( $this, 'validate_options' ) );
 	}
 
-	public function validate_options( $input_array ) {
-		$output = [];
-
-		$group_associations = $input_array['dcwl_group_associations'];
-
-		foreach ( $group_associations as $wl_group_id => $sub_array ) {
-			$output_key = sanitize_key( $wl_group_id );
-			if ( array_key_exists( 'dc_group_ids', $sub_array ) ) {
-				$output['dcwl_group_associations'][ $output_key ]['dc_group_ids'] = $sub_array['dc_group_ids'];
-			}
-
-			if ( array_key_exists( 'require_activation', $sub_array ) ) {
-				$output['dcwl_group_associations'][ $output_key ]['require_activation'] = intval( $sub_array['require_activation'] );
-			}
-
-			if ( array_key_exists( 'auto_remove', $sub_array ) ) {
-				$output['dcwl_group_associations'][ $output_key ]['auto_remove'] = intval( $sub_array['auto_remove'] );
-			}
-		}
-
-		return $output;
-	}
 
 	public function add_groups_page() {
 		add_submenu_page(
@@ -179,5 +157,28 @@ class Admin {
 			<?php endforeach; ?>
 		<?php endif; ?>
 		<?php
+	}
+
+	protected function validate_options( $input_array ) {
+		$output = [];
+
+		$group_associations = $input_array['dcwl_group_associations'];
+
+		foreach ( $group_associations as $wl_group_id => $sub_array ) {
+			$output_key = sanitize_key( $wl_group_id );
+			if ( array_key_exists( 'dc_group_ids', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['dc_group_ids'] = $sub_array['dc_group_ids'];
+			}
+
+			if ( array_key_exists( 'require_activation', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['require_activation'] = intval( $sub_array['require_activation'] );
+			}
+
+			if ( array_key_exists( 'auto_remove', $sub_array ) ) {
+				$output['dcwl_group_associations'][ $output_key ]['auto_remove'] = intval( $sub_array['auto_remove'] );
+			}
+		}
+
+		return $output;
 	}
 }
