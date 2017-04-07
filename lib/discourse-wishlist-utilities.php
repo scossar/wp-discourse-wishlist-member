@@ -19,7 +19,7 @@ trait DiscourseWishlistUtilities {
 			return new \WP_Error( 'discourse_configuration_error', "Unable to retrieve Discourse groups. The WP Discourse plugin isn't properly configured." );
 		}
 
-		$force_update = isset( $dcwl_options['dcwl_update_discourse_groups'] ) ? $dcwl_options['dcwl_update_discourse_groups'] : 0;
+		$force_update = ! empty( $dcwl_options['dcwl_update_discourse_groups'] ) ? $dcwl_options['dcwl_update_discourse_groups'] : 0;
 
 		$parsed_data = get_transient( 'wpdc_groups_data' );
 
@@ -28,10 +28,14 @@ trait DiscourseWishlistUtilities {
 			$parsed_data     = [];
 
 			foreach ( $raw_groups_data as $group ) {
-				$parsed_data[] = array(
-					'id'   => $group['id'],
-					'name' => $group['name'],
-				);
+
+				if ( empty( $group['automatic'])) {
+
+					$parsed_data[] = array(
+						'id'   => $group['id'],
+						'name' => $group['name'],
+					);
+				}
 			}
 
 			set_transient( 'wpdc_groups_data', $parsed_data, 10 * MINUTE_IN_SECONDS );
@@ -73,14 +77,22 @@ trait DiscourseWishlistUtilities {
 
 	protected function get_discourse_groups_data() {
 		$base_url = $this->get_connection_option( 'url' );
+		$api_key = $this->get_connection_option( 'api-key' );
+		$api_username = $this->get_connection_option( 'publish-username' );
 
-		if ( ! $base_url ) {
+		if ( ! $base_url && $api_key && $api_username ) {
 
 			return new \WP_Error( 'discourse_configuration_error', 'The Discourse URL has not been set.' );
 		}
 
 		$groups_url = $base_url . '/groups.json';
-		$response   = wp_remote_get( esc_url( $groups_url ) );
+
+		$groups_url = add_query_arg( array(
+			'api_key' => $api_key,
+			'api_username' => $api_username,
+		), $groups_url );
+
+		$response   = wp_remote_get( esc_url_raw( $groups_url ) );
 
 		if ( ! DiscourseUtilities::validate( $response ) ) {
 
