@@ -33,15 +33,12 @@ class DiscourseUser {
 			return $data;
 		}
 
-
 		$user_data = ! empty( $data['user'] ) ? $data['user'] : null;
 
 		if ( ! $user_data ) {
 
 			return new \WP_Error( 'discourse_webhook_invalid_request', "A Discourse user wasn't returned with the request payload." );
 		}
-
-		write_log('we have data!!!', $user_data );
 
 		$discourse_id = $user_data['id'];
 		$discourse_username = $user_data['username'];
@@ -71,9 +68,9 @@ class DiscourseUser {
 		}
 
 		if ( $user_id ) {
-			update_user_meta( $user_id, 'discourse_username', $discourse_username );
+//			update_user_meta( $user_id, 'discourse_username', $discourse_username );
 			// This should never be changed, use `add_user_meta` instead of `update_user_meta`.
-			add_user_meta( $user_id, 'discourse_sso_external_id', $discourse_id );
+//			add_user_meta( $user_id, 'discourse_sso_external_id', $discourse_id );
 		}
 	}
 }

@@ -51,7 +51,7 @@ trait DiscourseWishlistUtilities {
 	public function lookup_or_create_discourse_user( $user_id, $force_email_verification ) {
 		$user = get_user_by( 'id', $user_id );
 
-		$discourse_user_id = $this->lookup_discourse_user( $user );
+		$discourse_user_id = $this->get_discourse_user_id( $user_id, $user );
 
 		if ( ! $discourse_user_id || is_wp_error( $discourse_user_id ) ) {
 			$discourse_user_id = $this->create_discourse_user( $user, $force_email_verification );
@@ -127,6 +127,61 @@ trait DiscourseWishlistUtilities {
 		return null;
 	}
 
+	protected function get_discourse_user_id( $wp_user_id, $wp_user ) {
+		if ( get_user_meta( $wp_user_id, 'discourse_sso_external_id', true ) ) {
+
+			return get_user_meta( $wp_user_id, 'discourse_sso_external_id', true );
+		}
+
+		$base_url     = $this->get_connection_option( 'url' );
+		$api_key      = $this->get_connection_option( 'api-key' );
+		$api_username = $this->get_connection_option( 'publish-username' );
+
+		if ( $base_url && $api_key && $api_username ) {
+
+			// Try to get the user by external_id. This will cause a 500 error on Discourse for private forums.
+			$external_user_url = $base_url . "/users/by-external/$wp_user_id.json";
+			$external_user_url = add_query_arg( array(
+				'api_key'      => $api_key,
+				'api_username' => $api_username,
+			), $external_user_url );
+
+			$response = wp_remote_get( esc_url( $external_user_url ) );
+
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				return $user_data['user']['id'];
+			}
+
+			// Try to get the user by email from active.json.
+			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
+
+			$users_url = add_query_arg( array(
+				'filter'       => rawurlencode( $wp_user->user_email ),
+				'api_key'      => $api_key,
+				'api_username' => $api_username,
+			), $users_url );
+
+			$response = wp_remote_get( $users_url );
+
+			if ( DiscourseUtilities::validate( $response ) ) {
+				$users_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				$user_data = ( ! empty( $users_data[0] ) ) ? $users_data[0] : null;
+
+				// This is checking that both the emails and the usernames match.
+				if ( $user_data && $user_data['username'] === $wp_user->user_login ) {
+
+
+					return $user_data['id'];
+				}
+			}
+
+			// The user doesn't exist yet.
+			return null;
+		}
+	}
 
 	protected function lookup_discourse_user( $wp_user ) {
 		$connection_options = get_option( 'discourse_connect' );
@@ -138,9 +193,9 @@ trait DiscourseWishlistUtilities {
 			// Try to get the user by external_id
 			$external_user_url = $base_url . "/users/by-external/$wp_user->ID.json";
 			$external_user_url = add_query_arg( array(
-				'api_key' => $api_key,
+				'api_key'      => $api_key,
 				'api_username' => $api_username,
-			), $external_user_url);
+			), $external_user_url );
 			$response          = wp_remote_get( esc_url( $external_user_url ) );
 
 			if ( DiscourseUtilities::validate( $response ) ) {
@@ -238,7 +293,7 @@ trait DiscourseWishlistUtilities {
 		}
 
 		$payload = $data->get_body();
-		$secret = get_option( 'dcwl_webhook_secret' ) ? get_option( 'dcwl_webhook_secret' ) : 'thisisatester';
+		$secret  = get_option( 'dcwl_webhook_secret' ) ? get_option( 'dcwl_webhook_secret' ) : 'thisisatester';
 
 		if ( $sig = hash_hmac( 'sha256', $payload, $secret ) ) {
 
