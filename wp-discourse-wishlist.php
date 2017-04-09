@@ -39,9 +39,12 @@ function init() {
 
 		require_once( __DIR__ . '/lib/discourse-wishlist-utilities.php' );
 		require_once( __DIR__ . '/lib/discourse-wishlist.php' );
+		require_once( __DIR__ . '/lib/discourse-user.php' );
 
-		$wpdc_wishlist = new DiscourseWishlist();
-		$wpdc_wishlist->init();
+		$discourse_user = new DiscourseUser();
+		$discourse_user->init();
+		$discourse_wishlist = new DiscourseWishlist();
+		$discourse_wishlist->init();
 
 		if ( is_admin() ) {
 			require_once( __DIR__ . '/admin/admin.php' );

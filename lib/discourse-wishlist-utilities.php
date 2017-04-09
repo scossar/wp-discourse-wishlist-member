@@ -29,7 +29,7 @@ trait DiscourseWishlistUtilities {
 
 			foreach ( $raw_groups_data as $group ) {
 
-				if ( empty( $group['automatic'])) {
+				if ( empty( $group['automatic'] ) ) {
 
 					$parsed_data[] = array(
 						'id'   => $group['id'],
@@ -76,8 +76,8 @@ trait DiscourseWishlistUtilities {
 	}
 
 	protected function get_discourse_groups_data() {
-		$base_url = $this->get_connection_option( 'url' );
-		$api_key = $this->get_connection_option( 'api-key' );
+		$base_url     = $this->get_connection_option( 'url' );
+		$api_key      = $this->get_connection_option( 'api-key' );
 		$api_username = $this->get_connection_option( 'publish-username' );
 
 		if ( ! $base_url && $api_key && $api_username ) {
@@ -88,11 +88,11 @@ trait DiscourseWishlistUtilities {
 		$groups_url = $base_url . '/groups.json';
 
 		$groups_url = add_query_arg( array(
-			'api_key' => $api_key,
+			'api_key'      => $api_key,
 			'api_username' => $api_username,
 		), $groups_url );
 
-		$response   = wp_remote_get( esc_url_raw( $groups_url ) );
+		$response = wp_remote_get( esc_url_raw( $groups_url ) );
 
 		if ( ! DiscourseUtilities::validate( $response ) ) {
 
@@ -131,14 +131,21 @@ trait DiscourseWishlistUtilities {
 	protected function lookup_discourse_user( $wp_user ) {
 		$connection_options = get_option( 'discourse_connect' );
 		$base_url           = $connection_options['url'];
+		$api_key            = $connection_options['api-key'];
+		$api_username       = $connection_options['publish-username'];
 
 		if ( $base_url ) {
-			// Try to get the user by external_id.
-			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$wp_user->ID.json" );
-			$response          = wp_remote_get( $external_user_url );
+			// Try to get the user by external_id
+			$external_user_url = $base_url . "/users/by-external/$wp_user->ID.json";
+			$external_user_url = add_query_arg( array(
+				'api_key' => $api_key,
+				'api_username' => $api_username,
+			), $external_user_url);
+			$response          = wp_remote_get( esc_url( $external_user_url ) );
 
 			if ( DiscourseUtilities::validate( $response ) ) {
 				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+				write_log( 'user data', $user_data );
 
 				return $user_data['user']['id'];
 			}
@@ -220,5 +227,25 @@ trait DiscourseWishlistUtilities {
 		}
 
 		return new \WP_Error( 'discourse_user_not_created', 'The Disocourse user could not be created.' );
+	}
+
+	protected function verify_wordpress_api_request( $data ) {
+		$sig = substr( $data->get_header( 'X-Discourse-Event-Signature' ), 7 );
+
+		if ( empty( $sig ) ) {
+
+			return new \WP_Error( 'discourse_webhook_invalid_request', "The Discourse webhook didn't return a signature." );
+		}
+
+		$payload = $data->get_body();
+		$secret = get_option( 'dcwl_webhook_secret' ) ? get_option( 'dcwl_webhook_secret' ) : 'thisisatester';
+
+		if ( $sig = hash_hmac( 'sha256', $payload, $secret ) ) {
+
+			return $data->get_json_params();
+		} else {
+
+			return new \WP_Error( 'discourse_webhook_invalid_request', "The Discourse webhook secret key didn't match the saved key." );
+		}
 	}
 }
