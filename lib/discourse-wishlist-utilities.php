@@ -23,7 +23,7 @@ trait DiscourseWishlistUtilities {
 
 		$parsed_data = get_transient( 'wpdc_groups_data' );
 
-		if ( empty( $parsed_data ) || $force_update ) {
+		if ( empty( $parsed_data ) || empty( $parsed_data[0]['name'] ) || $force_update ) {
 			$raw_groups_data = $this->get_discourse_groups_data();
 			$parsed_data     = [];
 
