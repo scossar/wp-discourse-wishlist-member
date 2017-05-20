@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP Discourse WishList
  * Description: Extends the WP Discourse plugin to allow WishList members to be added to Discourse groups.
- * Version: 0.15
+ * Version: 0.25
  * Text Domain: wpdc-wishlist
  * GitHub Plugin URI: https://github.com/scossar/wp-discourse-wishlist-member
  *
