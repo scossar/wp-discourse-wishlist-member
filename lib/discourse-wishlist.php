@@ -2,7 +2,12 @@
 
 namespace WPDCWishList;
 
-
+/**
+ * Todo: disable plugin functions if Discourse is being used as the SSO provider for WordPress. That can be made to work later.
+ *
+ * Class DiscourseWishlist
+ * @package WPDCWishList
+ */
 class DiscourseWishlist {
 	use DiscourseWishlistUtilities;
 
