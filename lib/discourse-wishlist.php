@@ -24,10 +24,27 @@ class DiscourseWishlist {
 			'add_confirmed_member_to_discourse_group',
 		), 10, 2 );
 		add_action( 'wishlistmember_remove_user_levels', array( $this, 'remove_member_from_discourse_groups' ), 10, 2 );
+
+		add_filter( 'wishlistmember_login_redirect_override', array( $this, 'remove_login_redirect' ) );
 	}
 
 	public function initialize_plugin() {
 		add_option( 'dcwl_groups', $this->dcwl_groups );
+	}
+
+	/**
+	 * If the WishList login redirect is enabled, SSO will be broken. This will override the WishList login redirect
+	 * for SSO requests.
+	 *
+	 * @return bool
+	 */
+	public function remove_login_redirect() {
+		if ( ! empty( $_REQUEST['redirect_to'] ) && false !== strpos( $_REQUEST['redirect_to'], 'sso' ) ) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public function add_confirmed_member_to_discourse_group( $user_id, $levels ) {
