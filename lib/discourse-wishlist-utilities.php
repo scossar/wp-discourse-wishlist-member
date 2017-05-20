@@ -29,7 +29,7 @@ trait DiscourseWishlistUtilities {
 
 			foreach ( $raw_groups_data as $group ) {
 
-				if ( empty( $group['automatic'])) {
+				if ( empty( $group['automatic'] ) ) {
 
 					$parsed_data[] = array(
 						'id'   => $group['id'],
@@ -60,24 +60,9 @@ trait DiscourseWishlistUtilities {
 		return $discourse_user_id;
 	}
 
-	protected function get_connection_option( $option ) {
-		static $connection_options = null;
-
-		if ( ! $connection_options ) {
-			$connection_options = get_option( 'discourse_connect' );
-		}
-
-		if ( isset( $connection_options[ $option ] ) ) {
-
-			return $connection_options[ $option ];
-		}
-
-		return false;
-	}
-
 	protected function get_discourse_groups_data() {
-		$base_url = $this->get_connection_option( 'url' );
-		$api_key = $this->get_connection_option( 'api-key' );
+		$base_url     = $this->get_connection_option( 'url' );
+		$api_key      = $this->get_connection_option( 'api-key' );
 		$api_username = $this->get_connection_option( 'publish-username' );
 
 		if ( ! $base_url && $api_key && $api_username ) {
@@ -88,11 +73,11 @@ trait DiscourseWishlistUtilities {
 		$groups_url = $base_url . '/groups.json';
 
 		$groups_url = add_query_arg( array(
-			'api_key' => $api_key,
+			'api_key'      => $api_key,
 			'api_username' => $api_username,
 		), $groups_url );
 
-		$response   = wp_remote_get( esc_url_raw( $groups_url ) );
+		$response = wp_remote_get( esc_url_raw( $groups_url ) );
 
 		if ( ! DiscourseUtilities::validate( $response ) ) {
 
@@ -129,44 +114,51 @@ trait DiscourseWishlistUtilities {
 
 
 	protected function lookup_discourse_user( $wp_user ) {
-		$connection_options = get_option( 'discourse_connect' );
-		$base_url           = $connection_options['url'];
+		$base_url     = $this->get_connection_option( 'url' );
+		$api_key      = $this->get_connection_option( 'api-key' );
+		$api_username = $this->get_connection_option( 'publish-username' );
 
-		if ( $base_url ) {
-			// Try to get the user by external_id.
-			$external_user_url = esc_url_raw( $base_url . "/users/by-external/$wp_user->ID.json" );
-			$response          = wp_remote_get( $external_user_url );
+		if ( ! $base_url || ! $api_key || ! $api_username ) {
 
-			if ( DiscourseUtilities::validate( $response ) ) {
-				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-				return $user_data['user']['id'];
-			}
-
-			// Try to get the user by email from active.json.
-			$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
-
-			$users_url = add_query_arg( array(
-				'filter'       => rawurlencode( $wp_user->user_email ),
-				'api_key'      => $connection_options['api-key'],
-				'api_username' => $connection_options['publish-username'],
-			), $users_url );
-
-			$response = wp_remote_get( $users_url );
-			if ( DiscourseUtilities::validate( $response ) ) {
-				$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-				if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
-
-					return $user_data[0]['id'];
-				}
-			}
-
-			// The user doesn't exist yet.
-			return null;
+			return new \WP_Error( 'discourse_configuration_error', 'The WP Discourse plugin has not been properly configured.' );
 		}
 
-		return new \WP_Error( 'discourse_configuration_error', 'Unable to retrieve user. The WP Discourse plugin is not properly configured.' );
+		// Try to get the user by external_id.
+		$external_user_url = esc_url_raw( $base_url . "/users/by-external/$wp_user->ID.json" );
+
+		$external_user_url = add_query_arg( array(
+			'api_key'      => $api_key,
+			'api_username' => $api_username,
+		), $external_user_url );
+		$response          = wp_remote_get( $external_user_url );
+
+		if ( DiscourseUtilities::validate( $response ) ) {
+			$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			return $user_data['user']['id'];
+		}
+
+		// Try to get the user by email from active.json.
+		$users_url = esc_url_raw( $base_url . '/admin/users/list/active.json' );
+
+		$users_url = add_query_arg( array(
+			'filter'       => rawurlencode( $wp_user->user_email ),
+			'api_key'      => $api_key,
+			'api_username' => $api_username,
+		), $users_url );
+
+		$response = wp_remote_get( $users_url );
+		if ( DiscourseUtilities::validate( $response ) ) {
+			$user_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( isset( $user_data[0] ) && isset( $user_data[0]['id'] ) ) {
+
+				return $user_data[0]['id'];
+			}
+		}
+
+		// The user doesn't exist yet.
+		return null;
 	}
 
 	protected function create_discourse_user( $user, $force_email_verification ) {
@@ -220,5 +212,27 @@ trait DiscourseWishlistUtilities {
 		}
 
 		return new \WP_Error( 'discourse_user_not_created', 'The Disocourse user could not be created.' );
+	}
+
+	/**
+	 * A helper function to get the desired option from the WP Discourse discourse_connect options array.
+	 *
+	 * @param string $option the desired option.
+	 *
+	 * @return string|bool
+	 */
+	protected function get_connection_option( $option ) {
+		static $connection_options = null;
+
+		if ( ! $connection_options ) {
+			$connection_options = get_option( 'discourse_connect' );
+		}
+
+		if ( isset( $connection_options[ $option ] ) ) {
+
+			return $connection_options[ $option ];
+		}
+
+		return false;
 	}
 }
