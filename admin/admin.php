@@ -79,6 +79,12 @@ class Admin {
                 the WishList level.', 'wpdc-wishlist' ); ?>
 			</em>
 		</p>
+        <p>
+            <em>
+				<?php esc_html_e( "If the 'Auto Remove Users' option is selected for a level, users will be automatically
+				removed from the associated Discourse group when they are removed from a WishList level.", 'wpdc-wishlist' ); ?>
+            </em>
+        </p>
 		<p>
 			<em>
 				<strong><?php esc_html_e( 'Note: ', 'wpdc-wishlist' ); ?></strong>
