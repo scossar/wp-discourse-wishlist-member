@@ -168,7 +168,7 @@ trait DiscourseWishlistUtilities {
 		$api_key         = $this->get_connection_option( 'api-key' );
 		$api_username    = $this->get_connection_option( 'publish-username' );
 
-		if ( empty( $api_key ) && empty( $api_username ) ) {
+		if ( empty( $api_key ) || empty( $api_username ) ) {
 
 			return new \WP_Error( 'discourse_configuration_error', 'Unable to create Discourse user. The Discourse configuration options have not been set.' );
 		}
