@@ -65,8 +65,7 @@ trait DiscourseWishlistUtilities {
 		$api_key      = $this->get_connection_option( 'api-key' );
 		$api_username = $this->get_connection_option( 'publish-username' );
 
-		// Todo: fix this.
-		if ( ! $base_url && $api_key && $api_username ) {
+		if ( empty( $base_url ) || empty( $api_key ) || empty( $api_username ) ) {
 
 			return new \WP_Error( 'discourse_configuration_error', 'The Discourse URL has not been set.' );
 		}
